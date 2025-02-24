@@ -11,9 +11,8 @@ const updateCommitMessageField = (repo: Repo) => {
     const currentMessage = repo.inputBox.value;
     const newMessage = generateMessage(branchData, currentMessage);
     if (currentMessage !== newMessage) {
-      vscode.window.setStatusBarMessage(
-        `Updating commit message field: ${newMessage}`,
-        3000
+      vscode.window.showInformationMessage(
+        `Updating commit message field:\n${newMessage}`
       );
       repo.inputBox.value = newMessage;
     }
@@ -21,19 +20,18 @@ const updateCommitMessageField = (repo: Repo) => {
 };
 
 export async function activate(context: vscode.ExtensionContext) {
-  vscode.window.setStatusBarMessage(
-    'Extension "commit-message-structure-generator" activated!',
-    3000
+  vscode.window.showInformationMessage(
+    'Extension "commit-message-structure-generator" activated!'
   );
   const git = await getGitAPI();
   if (!git) {
-    vscode.window.setStatusBarMessage("Git API not found.", 3000);
+    vscode.window.showErrorMessage("Git API not found.");
     return;
   }
 
   git.repositories.forEach((repo: Repo) => {
     repo.state.onDidChange(() => {
-      vscode.window.setStatusBarMessage("Repository state changed.", 3000);
+      vscode.window.showInformationMessage("Repository state changed.");
       updateCommitMessageField(repo);
     });
 
