@@ -16,19 +16,10 @@ const updateCommitMessageField = (repo: Repo) => {
   }
 };
 
-export async function activate(context: vscode.ExtensionContext) {
+export async function activate() {
   console.log(
     'Congratulations, your extension "commit-message-structure-generator" is now active!'
   );
-  const disposable = vscode.commands.registerCommand(
-    "commit-message-structure-generator.helloWorld",
-    () => {
-      vscode.window.showInformationMessage(
-        "Hello World from commit-message-structure-generator!"
-      );
-    }
-  );
-  context.subscriptions.push(disposable);
 
   const git = await getGitAPI();
   if (!git) {
@@ -41,14 +32,15 @@ export async function activate(context: vscode.ExtensionContext) {
     });
     let debounceTimer: NodeJS.Timeout | undefined;
     if (repo.inputBox && typeof repo.inputBox.onDidChange === "function") {
-      repo.inputBox.onDidChange(() => {
+      repo.inputBox.onDidChange = () => {
+        console.log("TEST-COMMIT did change");
         if (debounceTimer) {
           clearTimeout(debounceTimer);
         }
         debounceTimer = setTimeout(() => {
           updateCommitMessageField(repo);
         }, 1000);
-      });
+      };
     }
   });
 }
