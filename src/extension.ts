@@ -7,9 +7,9 @@ import { Repo } from "./utils/types";
 const updateCommitMessageField = (repo: Repo) => {
   const branchName = repo.state.HEAD?.name;
   if (branchName) {
-    const branchData = extractInfoFromCurrentBranch(branchName);
+    const { branchPartsData } = extractInfoFromCurrentBranch(branchName);
     const currentMessage = repo.inputBox.value;
-    const newMessage = generateMessage(branchData, currentMessage);
+    const newMessage = generateMessage(branchPartsData, currentMessage);
     if (currentMessage !== newMessage) {
       repo.inputBox.value = newMessage;
     }
@@ -20,15 +20,6 @@ export async function activate(context: vscode.ExtensionContext) {
   console.log(
     'Congratulations, your extension "commit-message-structure-generator" is now active!'
   );
-  const disposable = vscode.commands.registerCommand(
-    "commit-message-structure-generator.helloWorld",
-    () => {
-      vscode.window.showInformationMessage(
-        "Hello World from commit-message-structure-generator!"
-      );
-    }
-  );
-  context.subscriptions.push(disposable);
 
   const git = await getGitAPI();
   if (!git) {
