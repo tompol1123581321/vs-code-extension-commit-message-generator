@@ -26,23 +26,21 @@ export function fillTemplate(
   return result;
 }
 
-function escapeRegex(str: string): string {
-  return str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+function getLiteralText(template: string): string {
+  return template.replace(/\{b\d+\}/g, "").replace(/\{message\}/g, "");
 }
 
 export function isMessageCompatible(message: string): boolean {
   const config = vscode.workspace.getConfiguration(DEFAULT_SETTINGS_PATH);
   const template = config.get<string>(TEMPLATE, DEFAULT_TEMPLATE);
+  const literalText = getLiteralText(template).trim();
+  if (!literalText) {
+    return true;
+  }
 
-  let pattern = escapeRegex(template);
-
-  pattern = pattern.replace(/\\\{b\d+\\\}/g, "(.+?)");
-  pattern = pattern.replace(/\\\{message\\\}/g, "([\\s\\S]+?)");
-  pattern = "^" + pattern + "$";
-  const regex = new RegExp(pattern, "m");
-  return regex.test(message.trim());
+  const trimmedMsg = message.trim();
+  return trimmedMsg.includes(literalText);
 }
-
 export const generateMessage = (
   branchPartsData: string[],
   message: string
