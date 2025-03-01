@@ -18,7 +18,7 @@ const updateCommitMessageField = (repo: Repo) => {
 
 export async function activate(context: vscode.ExtensionContext) {
   console.log(
-    'Congratulations, your extension "commit-message-structure-generator" is now active!'
+    "Congratulations, your extension DEFAULT_SETTINGS_PATH is now active!"
   );
 
   const git = await getGitAPI();

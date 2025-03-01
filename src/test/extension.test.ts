@@ -1,11 +1,14 @@
 import * as assert from "assert";
 import * as vscode from "vscode";
 import { extractInfoFromCurrentBranch } from "../utils/extractInfoFromCurrentBranch";
-import { generateMessage } from "../utils/generateMessage";
-
-// The extension's "true default" values:
-const EXTENSION_DEFAULT_TEMPLATE = "{b1}({b2}):\n{message}\n\n[{b3}]";
-const DEFAULT_WORD_SEPARATOR = "-";
+import { generateMessage, isMessageCompatible } from "../utils/generateMessage";
+import {
+  DEFAULT_SETTINGS_PATH,
+  DEFAULT_TEMPLATE,
+  DEFAULT_WORD_SEPARATOR,
+  TEMPLATE,
+  WORD_SEPARATOR,
+} from "../constants";
 
 suite("Extension Test Suite", function () {
   let config: vscode.WorkspaceConfiguration;
@@ -13,51 +16,46 @@ suite("Extension Test Suite", function () {
   let userOriginalSeparator: string | undefined;
 
   this.beforeAll(async () => {
-    // Use the config scope that your extension actually uses:
-    config = vscode.workspace.getConfiguration(
-      "commit-message-structure-generator"
-    );
+    config = vscode.workspace.getConfiguration(DEFAULT_SETTINGS_PATH);
 
-    // Capture the user’s real current settings:
-    userOriginalTemplate = config.get<string>("template");
-    userOriginalSeparator = config.get<string>("wordSeparator");
+    userOriginalTemplate = config.get<string>(TEMPLATE);
+    userOriginalSeparator = config.get<string>(WORD_SEPARATOR);
 
-    // Force them to the extension defaults so every test starts from a clean baseline:
+    // Force extension defaults
     await config.update(
-      "template",
-      EXTENSION_DEFAULT_TEMPLATE,
+      TEMPLATE,
+      DEFAULT_TEMPLATE,
       vscode.ConfigurationTarget.Global
     );
     await config.update(
-      "wordSeparator",
+      WORD_SEPARATOR,
       DEFAULT_WORD_SEPARATOR,
       vscode.ConfigurationTarget.Global
     );
   });
 
   this.afterAll(async () => {
-    // After all tests, restore the user’s original config so we don’t change their environment permanently
+    // Restore user’s original settings
     await config.update(
-      "template",
+      TEMPLATE,
       userOriginalTemplate,
       vscode.ConfigurationTarget.Global
     );
     await config.update(
-      "wordSeparator",
+      WORD_SEPARATOR,
       userOriginalSeparator,
       vscode.ConfigurationTarget.Global
     );
   });
 
-  // For safety, each test also reverts to the extension defaults before and after it runs
   this.beforeEach(async () => {
     await config.update(
-      "template",
-      EXTENSION_DEFAULT_TEMPLATE,
+      TEMPLATE,
+      DEFAULT_TEMPLATE,
       vscode.ConfigurationTarget.Global
     );
     await config.update(
-      "wordSeparator",
+      WORD_SEPARATOR,
       DEFAULT_WORD_SEPARATOR,
       vscode.ConfigurationTarget.Global
     );
@@ -65,12 +63,12 @@ suite("Extension Test Suite", function () {
 
   this.afterEach(async () => {
     await config.update(
-      "template",
-      EXTENSION_DEFAULT_TEMPLATE,
+      TEMPLATE,
+      DEFAULT_TEMPLATE,
       vscode.ConfigurationTarget.Global
     );
     await config.update(
-      "wordSeparator",
+      WORD_SEPARATOR,
       DEFAULT_WORD_SEPARATOR,
       vscode.ConfigurationTarget.Global
     );
@@ -78,7 +76,9 @@ suite("Extension Test Suite", function () {
 
   vscode.window.showInformationMessage("Start all tests.");
 
-  // --- Tests for extractInfoFromCurrentBranch ---
+  // -------------------------------
+  // extractInfoFromCurrentBranch tests
+  // -------------------------------
   test("extractInfoFromCurrentBranch - default separator", () => {
     const branchName = "prefix-123-feat-login";
     const result = extractInfoFromCurrentBranch(branchName);
@@ -91,30 +91,49 @@ suite("Extension Test Suite", function () {
   });
 
   test("extractInfoFromCurrentBranch - custom separator", async () => {
-    const originalSeparator = config.get<string>("wordSeparator");
+    const originalSeparator = config.get<string>(WORD_SEPARATOR);
 
-    // Temporarily set a custom separator to "/"
-    await config.update(
-      "wordSeparator",
-      "/",
-      vscode.ConfigurationTarget.Global
-    );
+    await config.update(WORD_SEPARATOR, "/", vscode.ConfigurationTarget.Global);
 
     const branchName = "prefix/123/feat/login";
     const { branchPartsData } = extractInfoFromCurrentBranch(branchName);
     assert.deepStrictEqual(branchPartsData, ["prefix", "123", "feat", "login"]);
 
-    // Restore the previous separator (though our afterEach also resets to default)
+    // Restore
     await config.update(
-      "wordSeparator",
+      WORD_SEPARATOR,
       originalSeparator,
       vscode.ConfigurationTarget.Global
     );
   });
 
-  // --- Tests for generateMessage ---
+  // -------------------------------
+  // isMessageCompatible tests
+  // -------------------------------
+  test("isMessageCompatible - default template, structured message returns true", () => {
+    // By default: {b1}({b2}):\n{message}\n\n[{b3}]
+    // Suppose the branchPartsData is ["feat", "login", "123"].
+    // A matching commit would be:
+    const message = "feat(login):\nImplement login functionality\n\n[123]";
+
+    const branchPartsData = ["feat", "login", "123"];
+    // isMessageCompatible should return true
+    const compatible = isMessageCompatible(branchPartsData, message);
+    assert.strictEqual(compatible, true);
+  });
+
+  test("isMessageCompatible - default template, unstructured message returns false", () => {
+    const message = "Some random commit that doesn't match the prefix/suffix";
+    const branchPartsData = ["feat", "login", "123"];
+
+    const compatible = isMessageCompatible(branchPartsData, message);
+    assert.strictEqual(compatible, false);
+  });
+
+  // -------------------------------
+  // generateMessage tests
+  // -------------------------------
   test("generateMessage - default template", () => {
-    // Expect to use the extension's default template: "{b1}({b2}):\n{message}\n\n[{b3}]"
     const branchPartsData = ["feat", "login", "123"];
     const message = "Implement login functionality";
     const expected = "feat(login):\nImplement login functionality\n\n[123]";
@@ -123,7 +142,7 @@ suite("Extension Test Suite", function () {
   });
 
   test("generateMessage - already structured message", () => {
-    // If the message matches the default structure exactly, it should pass through unchanged
+    // If it matches default structure exactly, generateMessage should return it as-is.
     const branchPartsData = ["fix", "logout", "456"];
     const message = "fix(logout):\nFix logout issue\n\n[456]";
     const result = generateMessage(branchPartsData, message);
@@ -131,10 +150,9 @@ suite("Extension Test Suite", function () {
   });
 
   test("generateMessage - custom template with nested braces", async () => {
-    const originalTemplate = config.get<string>("template");
-    // Template with nested placeholder using double braces
+    const originalTemplate = config.get<string>(TEMPLATE);
     await config.update(
-      "template",
+      TEMPLATE,
       "{b1}({{b2}}):\n{message}\n\nTicket: {b3}",
       vscode.ConfigurationTarget.Global
     );
@@ -145,43 +163,39 @@ suite("Extension Test Suite", function () {
     const result = generateMessage(branchPartsData, message);
     assert.strictEqual(result, expected);
 
-    // Restore immediately (though beforeEach/afterEach also does it)
     await config.update(
-      "template",
+      TEMPLATE,
       originalTemplate,
       vscode.ConfigurationTarget.Global
     );
   });
 
   test("generateMessage - template with missing branch part", async () => {
-    const originalTemplate = config.get<string>("template");
-    // Template uses {b1} and {b4}
+    const originalTemplate = config.get<string>(TEMPLATE);
     await config.update(
-      "template",
+      TEMPLATE,
       "Release: {b1} - Version {b4}\n{message}",
       vscode.ConfigurationTarget.Global
     );
 
     const branchPartsData = ["release"];
     const message = "Final build";
-    // Because there's no b4 (index 3), we expect {b4} to remain literal
     const expected = "Release: release - Version {b4}\nFinal build";
 
     const result = generateMessage(branchPartsData, message);
     assert.strictEqual(result, expected);
 
     await config.update(
-      "template",
+      TEMPLATE,
       originalTemplate,
       vscode.ConfigurationTarget.Global
     );
   });
 
   test("generateMessage - template with extra braces (triple braces)", async () => {
-    const originalTemplate = config.get<string>("template");
-    // triple braces around b1 => expect {b1} to become {data} if b1 = "data"
+    const originalTemplate = config.get<string>(TEMPLATE);
     await config.update(
-      "template",
+      TEMPLATE,
       "Info: {{{b1}}} - {message}",
       vscode.ConfigurationTarget.Global
     );
@@ -193,7 +207,7 @@ suite("Extension Test Suite", function () {
     assert.strictEqual(result, expected);
 
     await config.update(
-      "template",
+      TEMPLATE,
       originalTemplate,
       vscode.ConfigurationTarget.Global
     );
