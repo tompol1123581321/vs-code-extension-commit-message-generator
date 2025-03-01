@@ -13,12 +13,22 @@
   "activationEvents": [],
   "main": "./dist/extension.js",
   "contributes": {
-    "commands": [
-      {
-        "command": "commit-message-structure-generator.helloWorld",
-        "title": "Hello World"
+    "configuration": {
+      "type": "object",
+      "title": "Commit Message Structure Generator",
+      "properties": {
+        "commit-message-structure-generator.wordSeparator": {
+          "type": "string",
+          "default": "-",
+          "description": "Word separator used to split the branch name."
+        },
+        "commit-message-structure-generator.template": {
+          "type": "string",
+          "default": "{b1}({b2}):\n{message}\n\n[{b3}]",
+          "description": "Template used to generate the commit message. Placeholders: {b1} = type, {b2} = context, {b3} = ticketId, {message} = commit message."
+        }
       }
-    ]
+    }
   },
   "scripts": {
     "vscode:prepublish": "npm run package",
@@ -32,7 +42,7 @@
     "pretest": "npm run compile-tests && npm run compile && npm run lint",
     "check-types": "tsc --noEmit",
     "lint": "eslint src",
-    "test": "vscode-test"
+    "test": "npx vscode-test --extensionDevelopmentPath=. --extensionTestsPath=src/test/extension.test.js --workspace=src/test/.test-workspace"
   },
   "devDependencies": {
     "@types/vscode": "1.95.0",
