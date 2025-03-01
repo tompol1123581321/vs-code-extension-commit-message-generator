@@ -7,9 +7,9 @@ import { Repo } from "./utils/types";
 const updateCommitMessageField = (repo: Repo) => {
   const branchName = repo.state.HEAD?.name;
   if (branchName) {
-    const branchData = extractInfoFromCurrentBranch(branchName);
+    const { branchPartsData } = extractInfoFromCurrentBranch(branchName);
     const currentMessage = repo.inputBox.value;
-    const newMessage = generateMessage(branchData, currentMessage);
+    const newMessage = generateMessage(branchPartsData, currentMessage);
     if (currentMessage !== newMessage) {
       repo.inputBox.value = newMessage;
     }
