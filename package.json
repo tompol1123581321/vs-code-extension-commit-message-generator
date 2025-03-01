@@ -3,7 +3,7 @@
   "displayName": "commit-message-structure-generator",
   "publisher": "Tomas Polivka",
   "description": "IT will generate a simple customizable commit message structure",
-  "version": "3.2.0",
+  "version": "3.3.0",
   "engines": {
     "vscode": "^1.95.0"
   },
