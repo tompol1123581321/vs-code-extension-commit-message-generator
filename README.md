@@ -1,84 +1,147 @@
-# Commit Message Structure Generator - Build and Publish Instructions
+Commit Message Structure Generator 🚀📝
 
-## Overview:
+Automatically format your Git commit messages according to a customizable template. This extension ensures that your commit messages are consistent, clear, and follow your project's conventions!
 
-This extension automatically generates a customizable commit message structure
-based on your current Git branch name. The extension is configured via the
-"commitMessageStructure" settings (e.g., wordSeparator and template). This file
-describes how to build, package, and publish the extension.
+---
 
-## Prerequisites:
+Features ✨
 
-1. Node.js and npm must be installed.
-2. Install TypeScript, ESLint, esbuild, and other dependencies (already defined in package.json).
-3. Install vsce (Visual Studio Code Extension Manager) globally if you haven't already:
+• Automatic Commit Message Formatting
+As you type in the Source Control commit box, the extension reads your current Git branch name and automatically inserts a commit message prefix/suffix based on your chosen template.
 
-   npm install -g vsce
+• Customizable Template
+Define your own message structure using placeholders like {b1}, {b2}, {b3}, and {message}. The default template is:
 
-4. (For publishing) You must have a publisher account on the Visual Studio Marketplace.
-   Make sure the "publisher" field in package.json is set correctly (currently "Tomas Polivka").
+    {b1}({b2}):
+    {message}
 
-## Building the Extension:
+    [{b3}]
 
-1. Install all dependencies:
+Which might produce:
 
-   npm install
+    feat(login):
+    Implement login functionality
 
-2. To compile and package your extension for publishing, run the following command:
+    [123]
 
-   npm run package
+• Branch Splitting
+By default, branch parts are split using a hyphen (-). For example:
+Branch Name: feat-login-123
+Parts: ['feat', 'login', '123']
+You can change the word separator to something else (like / or \_) via VS Code settings.
 
-   This command runs the following steps:
+---
 
-   - "check-types": Ensures your TypeScript code compiles without errors.
-   - "lint": Runs ESLint on your source code.
-   - "node esbuild.js --production": Bundles and compiles your extension code into the dist/ folder.
+Installation & Usage 🚦
 
-3. After running npm run package, a .vsix file will be generated in your extension folder.
-   You can test this file by installing it locally:
+1.  Install the Extension
 
-   code --install-extension commit-message-structure-generator-<version>.vsix
+    - Press Ctrl + Shift + X (Windows/Linux) or Cmd + Shift + X (macOS) to open the Extensions view.
+    - Search for "Commit Message Structure Generator".
+    - Click "Install".
 
-## Testing the Extension:
+2.  Open a Git Repository
+    Make sure you have a Git repository open in VS Code.
 
-1. You can run your test suite with the following command:
+3.  Set Up Your Template (Optional)
 
-   npm run test
+    - Open File > Preferences > Settings (or press Ctrl + , on Windows / Cmd + , on macOS).
+    - Search for "Commit Message Structure Generator".
+    - Adjust the wordSeparator if your branch naming convention differs from the default (-).
+    - Customize the template to your preferred format. For example, the default is:
 
-2. The test script uses the VS Code Test Runner and your test workspace (see the test script in package.json).
+      {b1}({b2}):
+      {message}
 
-## Publishing the Extension:
+      [{b3}]
 
-1. Before publishing, update your version in package.json (e.g., from "1.0.0" to "1.0.1")
-   to reflect your changes.
+      You can add more placeholders (like {b4}) or remove them if needed.
 
-2. Log in to your publisher account using vsce:
+4.  Commit
+    When you type your commit message in the Source Control panel, the extension will automatically format it according to your template.
+    For example, if your branch is feat/login/123 and you type a message, it might become:
 
-   vsce login "Tomas Polivka"
+        feat(login):
+        Some commit message
 
-   This will prompt you to enter your Personal Access Token (PAT) from the Visual Studio Marketplace.
-   (If you don't have one, follow the official docs to create one.)
+        [123]
 
-3. To publish your extension, run:
+---
 
-   vsce publish
+Configuration Options ⚙️
 
-   (You can also publish a specific version by running "vsce publish <version>" if needed.)
+All settings are under the commitMessageStructure namespace.
 
-4. Once published, your extension will be available on the Visual Studio Marketplace.
+• commitMessageStructure.wordSeparator
+Type: string
+Default: -
+Description: Delimiter used to split your branch name into parts (e.g. {b1}, {b2}, {b3}, etc.).
 
-## Additional Notes:
+• commitMessageStructure.template
+Type: string
+Default:
+{b1}({b2}):
+{message}
 
-- If you need to change the activation behavior of the extension, update the "activationEvents"
-  array in package.json. For example, to auto-activate when a workspace contains a Git repository, add:
+    [{b3}]
 
-  "activationEvents": [
-  "workspaceContains:.git"
-  ]
+Description: Your custom commit template. The placeholders are: - {b1}, {b2}, {b3}, … → the parts extracted from your branch name. - {message} → the commit message you type.
 
-- Make sure to test your extension thoroughly before publishing new versions.
-- You can use "npm run watch" to continuously compile your changes during development.
+Examples:
 
-Enjoy your extension and happy coding!
+Default Template
+Template:
+{b1}({b2}):
+{message}
 
-=====================================================================
+    [{b3}]
+
+Example:
+If your branch is feat-login-123 and your commit message is “Implement login flow”, the final commit message is:
+
+      feat(login):
+      Implement login flow
+
+      [123]
+
+Release Template
+Template:
+Release: {b1} - Version {b4}
+{message}
+Example:
+If your branch is release (only one part), then {b1} becomes "release" and {b4} remains literal as {b4}.
+
+Nested Braces Example
+Template:
+{b1}({{b2}}):
+{message}
+
+    Ticket: {b3}
+
+Example:
+If {b2} equals "login", the output will include a literal {login}:
+
+      feat({login}):
+      Implement login functionality
+
+      Ticket: 123
+
+---
+
+Contributing 🤝
+
+• Clone this repository.
+• Install dependencies: npm install.
+• Open in VS Code and run the extension in the Extension Development Host.
+• Run tests: npm run test.
+• Submit a PR or open an issue with suggestions!
+
+---
+
+License 📝
+
+MIT License © 2023 Your Name
+
+---
+
+Enjoy clean, consistent commit messages with the Commit Message Structure Generator! 🎉
