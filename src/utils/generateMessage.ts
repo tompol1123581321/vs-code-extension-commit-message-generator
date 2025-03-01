@@ -26,26 +26,21 @@ export function fillTemplate(
   return result;
 }
 
-export function isMessageCompatible(
-  branchPartsData: string[],
-  message: string
-): boolean {
+function escapeRegex(str: string): string {
+  return str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+export function isMessageCompatible(message: string): boolean {
   const config = vscode.workspace.getConfiguration(DEFAULT_SETTINGS_PATH);
   const template = config.get<string>(TEMPLATE, DEFAULT_TEMPLATE);
 
-  const parts = template.split("{message}");
-  if (parts.length !== 2) {
-    return false;
-  }
+  let pattern = escapeRegex(template);
 
-  const prefix = fillTemplate(parts[0], branchPartsData, "");
-  const suffix = fillTemplate(parts[1], branchPartsData, "");
-
-  const trimmedMessage = message.trim();
-  return (
-    trimmedMessage.startsWith(prefix.trim()) &&
-    trimmedMessage.endsWith(suffix.trim())
-  );
+  pattern = pattern.replace(/\\\{b\d+\\\}/g, "(.+?)");
+  pattern = pattern.replace(/\\\{message\\\}/g, "([\\s\\S]+?)");
+  pattern = "^" + pattern + "$";
+  const regex = new RegExp(pattern, "m");
+  return regex.test(message.trim());
 }
 
 export const generateMessage = (
@@ -54,7 +49,7 @@ export const generateMessage = (
 ): string => {
   const trimmed = message.trim();
 
-  if (isMessageCompatible(branchPartsData, trimmed)) {
+  if (isMessageCompatible(trimmed)) {
     return message;
   }
 

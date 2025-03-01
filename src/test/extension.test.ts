@@ -118,7 +118,7 @@ suite("Extension Test Suite", function () {
 
     const branchPartsData = ["feat", "login", "123"];
     // isMessageCompatible should return true
-    const compatible = isMessageCompatible(branchPartsData, message);
+    const compatible = isMessageCompatible(message);
     assert.strictEqual(compatible, true);
   });
 
@@ -126,7 +126,7 @@ suite("Extension Test Suite", function () {
     const message = "Some random commit that doesn't match the prefix/suffix";
     const branchPartsData = ["feat", "login", "123"];
 
-    const compatible = isMessageCompatible(branchPartsData, message);
+    const compatible = isMessageCompatible(message);
     assert.strictEqual(compatible, false);
   });
 
