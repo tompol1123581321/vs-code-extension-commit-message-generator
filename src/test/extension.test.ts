@@ -134,9 +134,9 @@ suite("Extension Test Suite", function () {
   // generateMessage tests
   // -------------------------------
   test("generateMessage - default template", () => {
-    const branchPartsData = ["feat", "login", "123"];
+    const branchPartsData = ["feat", "login", "1233"];
     const message = "Implement login functionality";
-    const expected = "feat(login):\nImplement login functionality\n\n[123]";
+    const expected = "feat(login):\nImplement login functionality\n\n[1233]";
     const result = generateMessage(branchPartsData, message);
     assert.strictEqual(result, expected);
   });
