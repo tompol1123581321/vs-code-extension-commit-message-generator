@@ -28,13 +28,7 @@
           "description": "Template used to generate the commit message. Placeholders: {b1} = type, {b2} = context, {b3} = ticketId, {message} = commit message."
         }
       }
-    },
-    "commands": [
-      {
-        "command": "commit-message-structure-generator.helloWorld",
-        "title": "Hello World"
-      }
-    ]
+    }
   },
   "scripts": {
     "vscode:prepublish": "npm run package",
