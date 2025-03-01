@@ -124,8 +124,6 @@ suite("Extension Test Suite", function () {
 
   test("isMessageCompatible - default template, unstructured message returns false", () => {
     const message = "Some random commit that doesn't match the prefix/suffix";
-    const branchPartsData = ["feat", "login", "123"];
-
     const compatible = isMessageCompatible(message);
     assert.strictEqual(compatible, false);
   });
