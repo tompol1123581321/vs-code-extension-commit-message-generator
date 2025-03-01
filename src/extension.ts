@@ -30,6 +30,7 @@ export async function activate(context: vscode.ExtensionContext) {
   }
 
   git.repositories.forEach((repo: Repo) => {
+    console.log(repo);
     repo.state.onDidChange(() => {
       vscode.window.showInformationMessage("Repository state changed.");
       updateCommitMessageField(repo);
