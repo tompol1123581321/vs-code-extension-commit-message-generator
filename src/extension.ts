@@ -29,77 +29,49 @@ export async function activate(context: vscode.ExtensionContext) {
     return;
   }
 
-  const generateBranchCommand = vscode.commands.registerCommand(
-    "commit-message-structure-generator.generateBranchMessage",
-    () => {
-      git.repositories.forEach((repo: Repo) => {
-        const branchName = repo.state.HEAD?.name;
-        if (branchName) {
-          const { branchPartsData } = extractInfoFromCurrentBranch(branchName);
-          const currentMessage = repo.inputBox.value;
-          const branchGenerated = generateMessage(
-            branchPartsData,
-            currentMessage
-          );
-          if (currentMessage !== branchGenerated) {
-            updateCommitMessageFieldWithMsg(repo, currentMessage);
-          }
-        }
-      });
-    }
-  );
-  context.subscriptions.push(generateBranchCommand);
-
-  const generateCopilotCommand = vscode.commands.registerCommand(
-    "commit-message-structure-generator.generateCopilotMessage",
+  // Register a command to generate the commit message using Copilot's output.
+  const generateCommand = vscode.commands.registerCommand(
+    "commit-message-structure-generator.generateMessage",
     async () => {
-      let needCopilot = false;
+      // For each repository, simulate disabling the commit message field.
       git.repositories.forEach((repo: Repo) => {
-        const branchName = repo.state.HEAD?.name;
-        if (branchName) {
-          const { branchPartsData } = extractInfoFromCurrentBranch(branchName);
-          const currentMessage = repo.inputBox.value;
-          const branchGenerated = generateMessage(
-            branchPartsData,
-            currentMessage
-          );
-          if (currentMessage !== branchGenerated) {
-            needCopilot = true;
-          }
-        }
-      });
-      if (!needCopilot) {
-        vscode.window.showInformationMessage(
-          "No changes detected – using branch-based generation."
-        );
-        git.repositories.forEach((repo: Repo) => {
-          updateCommitMessageFieldWithMsg(repo, repo.inputBox.value);
-        });
-        return;
-      }
-
-      git.repositories.forEach((repo: Repo) => {
+        // Simulate disable by setting a placeholder text.
         repo.inputBox.value = "Generating commit message...";
+        // Optionally, mark the inputBox as disabled with a custom flag.
         (repo.inputBox as any).disabled = true;
       });
 
-      for (const repo of git.repositories) {
-        try {
-          const message = await generateCommitMessageFromCopilotForRepo(repo);
-          vscode.window.showInformationMessage(
-            `Copilot generated message:\n${message}`
-          );
-          repo.inputBox.value = message;
-        } catch (error) {
-          vscode.window.showWarningMessage(
-            "Copilot did not generate a message."
-          );
+      // Trigger Copilot to generate a commit message.
+      await vscode.commands.executeCommand(
+        "github.copilot.git.generateCommitMessage"
+      );
+
+      // Start fast polling interval to check when Copilot has updated the field.
+      const interval = setInterval(() => {
+        let allReposUpdated = true;
+        git.repositories.forEach((repo: Repo) => {
+          // If the field value is still our placeholder, Copilot hasn't updated it.
+          if (repo.inputBox.value === "Generating commit message...") {
+            allReposUpdated = false;
+          } else {
+            // Once changed, update the commit message with our formatting logic.
+            updateCommitMessageFieldWithMsg(repo, repo.inputBox.value);
+            // "Re-enable" the input field by removing our custom flag.
+            if ((repo.inputBox as any).disabled) {
+              (repo.inputBox as any).disabled = false;
+            }
+          }
+        });
+        // When all repositories have updated values, stop polling.
+        if (allReposUpdated) {
+          clearInterval(interval);
         }
-      }
+      }, 200);
     }
   );
-  context.subscriptions.push(generateCopilotCommand);
+  context.subscriptions.push(generateCommand);
 
+  // Listen for branch changes (only trigger on branch name change)
   git.repositories.forEach((repo: Repo) => {
     const initialBranch = repo.state.HEAD?.name || "";
     lastBranchMap.set(repo, initialBranch);
