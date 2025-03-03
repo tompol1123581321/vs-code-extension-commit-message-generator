@@ -29,76 +29,37 @@ export async function activate(context: vscode.ExtensionContext) {
     return;
   }
 
-  const generateBranchCommand = vscode.commands.registerCommand(
-    "commit-message-structure-generator.generateBranchMessage",
-    () => {
-      git.repositories.forEach((repo: Repo) => {
-        const branchName = repo.state.HEAD?.name;
-        if (branchName) {
-          const { branchPartsData } = extractInfoFromCurrentBranch(branchName);
-          const currentMessage = repo.inputBox.value;
-          const branchGenerated = generateMessage(
-            branchPartsData,
-            currentMessage
-          );
-          if (currentMessage !== branchGenerated) {
-            updateCommitMessageFieldWithMsg(repo, currentMessage);
-          }
-        }
-      });
-    }
-  );
-  context.subscriptions.push(generateBranchCommand);
-
-  const generateCopilotCommand = vscode.commands.registerCommand(
-    "commit-message-structure-generator.generateCopilotMessage",
+  const generateCommand = vscode.commands.registerCommand(
+    "commit-message-structure-generator.generateMessage",
     async () => {
-      let needCopilot = false;
-      git.repositories.forEach((repo: Repo) => {
-        const branchName = repo.state.HEAD?.name;
-        if (branchName) {
-          const { branchPartsData } = extractInfoFromCurrentBranch(branchName);
-          const currentMessage = repo.inputBox.value;
-          const branchGenerated = generateMessage(
-            branchPartsData,
-            currentMessage
-          );
-          if (currentMessage !== branchGenerated) {
-            needCopilot = true;
-          }
-        }
-      });
-      if (!needCopilot) {
-        vscode.window.showInformationMessage(
-          "No changes detected – using branch-based generation."
-        );
-        git.repositories.forEach((repo: Repo) => {
-          updateCommitMessageFieldWithMsg(repo, repo.inputBox.value);
-        });
-        return;
-      }
-
       git.repositories.forEach((repo: Repo) => {
         repo.inputBox.value = "Generating commit message...";
         (repo.inputBox as any).disabled = true;
       });
 
-      for (const repo of git.repositories) {
-        try {
-          const message = await generateCommitMessageFromCopilotForRepo(repo);
-          vscode.window.showInformationMessage(
-            `Copilot generated message:\n${message}`
-          );
-          repo.inputBox.value = message;
-        } catch (error) {
-          vscode.window.showWarningMessage(
-            "Copilot did not generate a message."
-          );
+      await vscode.commands.executeCommand(
+        "github.copilot.git.generateCommitMessage"
+      );
+
+      const interval = setInterval(() => {
+        let allReposUpdated = true;
+        git.repositories.forEach((repo: Repo) => {
+          if (repo.inputBox.value === "Generating commit message...") {
+            allReposUpdated = false;
+          } else {
+            updateCommitMessageFieldWithMsg(repo, repo.inputBox.value);
+            if ((repo.inputBox as any).disabled) {
+              (repo.inputBox as any).disabled = false;
+            }
+          }
+        });
+        if (allReposUpdated) {
+          clearInterval(interval);
         }
-      }
+      }, 200);
     }
   );
-  context.subscriptions.push(generateCopilotCommand);
+  context.subscriptions.push(generateCommand);
 
   git.repositories.forEach((repo: Repo) => {
     const initialBranch = repo.state.HEAD?.name || "";

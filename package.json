@@ -3,7 +3,7 @@
   "displayName": "commit-message-structure-generator",
   "publisher": "Tomas Polivka",
   "description": "IT will generate a simple customizable commit message structure",
-  "version": "3.4.0",
+  "version": "3.11.0",
   "engines": {
     "vscode": "^1.95.0"
   },
@@ -15,6 +15,21 @@
   ],
   "main": "./dist/extension.js",
   "contributes": {
+    "commands": [
+      {
+        "command": "commit-message-structure-generator.generateMessage",
+        "title": "Generate Commit Message"
+      }
+    ],
+    "menus": {
+      "scm/title": [
+        {
+          "command": "commit-message-structure-generator.generateMessage",
+          "when": "scmProvider == git",
+          "group": "navigation"
+        }
+      ]
+    },
     "configuration": {
       "type": "object",
       "title": "Commit Message Structure Generator",
